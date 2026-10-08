@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>AbsensiHub - Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/motion.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1e40af', 'primary-container': '#1e40af',
+            secondary: '#059669', 'secondary-container': '#d1fae5',
+            surface: '#f8fafc', 'surface-container': '#f1f5f9',
+            'surface-container-low': '#f8fafc', 'surface-container-lowest': '#ffffff',
+            'on-surface': '#0f172a', 'on-surface-variant': '#64748b',
+            'on-primary': '#ffffff', error: '#dc2626',
+          },
+          fontFamily: {
+            headline: ['Plus Jakarta Sans', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+
+    /* ═══ Interactive Background ═══ */
+    #bgCanvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
+    }
+    #bgCanvas circle { transition: r 0.3s ease; }
+
+    /* Animated gradient overlay */
+    .gradient-bg {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 0;
+      background: linear-gradient(-45deg, #eef2ff, #e0f2fe, #d1fae5, #f0fdf4, #eff6ff, #ecfdf5);
+      background-size: 400% 400%;
+      animation: gradientShift 20s ease infinite;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      25% { background-position: 100% 0%; }
+      50% { background-position: 100% 100%; }
+      75% { background-position: 0% 100%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Floating geometric shapes */
+    .geo-shape {
+      position: fixed; z-index: 1; pointer-events: none;
+      opacity: 0.08; will-change: transform;
+    }
+    .geo-hex {
+      width: 120px; height: 120px; top: 8%; left: 5%;
+      animation: floatHex 18s ease-in-out infinite;
+    }
+    .geo-hex svg { width: 100%; height: 100%; }
+    .geo-tri {
+      width: 90px; height: 90px; top: 15%; right: 8%;
+      animation: floatTri 22s ease-in-out infinite 2s;
+    }
+    .geo-circle {
+      width: 160px; height: 160px; bottom: 12%; left: 10%;
+      animation: floatCircle 25s ease-in-out infinite 1s;
+    }
+    .geo-sq {
+      width: 70px; height: 70px; bottom: 20%; right: 12%;
+      animation: floatSquare 20s ease-in-out infinite 3s;
+    }
+    .geo-dot-cluster {
+      width: 200px; height: 150px; top: 60%; left: 3%;
+      animation: floatCluster 15s ease-in-out infinite 0.5s;
+    }
+
+    @keyframes floatHex {
+      0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+      25% { transform: translate(20px, -30px) rotate(45deg) scale(1.1); }
+      50% { transform: translate(-10px, 15px) rotate(90deg) scale(0.95); }
+      75% { transform: translate(15px, 20px) rotate(135deg) scale(1.05); }
+    }
+    @keyframes floatTri {
+      0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+      33% { transform: translate(-25px, 20px) rotate(60deg) scale(1.15); }
+      66% { transform: translate(15px, -15px) rotate(120deg) scale(0.9); }
+    }
+    @keyframes floatCircle {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(30px, -20px) scale(1.1); }
+      50% { transform: translate(-15px, 30px) scale(0.95); }
+      75% { transform: translate(-20px, -10px) scale(1.05); }
+    }
+    @keyframes floatSquare {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      25% { transform: translate(-20px, -25px) rotate(30deg); }
+      50% { transform: translate(25px, 10px) rotate(60deg); }
+      75% { transform: translate(10px, 20px) rotate(90deg); }
+    }
+    @keyframes floatCluster {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(20px, -20px); }
+    }
+
+    /* Glass & Card */
+    .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+    .glow-blue { box-shadow: 0 0 60px rgba(30,64,175,0.15); }
+    .glow-green { box-shadow: 0 0 40px rgba(5,150,105,0.1); }
+    .glow-green-hover { box-shadow: 0 0 80px rgba(5,150,105,0.25); }
+
+    /* Input focus glow */
+    input:focus { border-color: #1e40af !important; box-shadow: 0 0 0 3px rgba(30,64,175,0.15); }
+
+    /* Shake animation for error */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .shake { animation: shake 0.4s ease-in-out; }
+
+    /* Success pulse */
+    @keyframes pulse-green {
+      0% { box-shadow: 0 0 0 0 rgba(5,150,105,0.4); }
+      70% { box-shadow: 0 0 0 15px rgba(5,150,105,0); }
+      100% { box-shadow: 0 0 0 0 rgba(5,150,105,0); }
+    }
+    .pulse-success { animation: pulse-green 0.6s ease-out; }
+
+    /* Cursor glow follower */
+    #cursorGlow {
+      position: fixed; width: 300px; height: 300px;
+      border-radius: 50%; pointer-events: none; z-index: 1;
+      background: radial-gradient(circle, rgba(30,64,175,0.07) 0%, transparent 70%);
+      transform: translate(-50%, -50%);
+      transition: left 0.8s ease-out, top 0.8s ease-out;
+      will-change: left, top;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col" style="background: #f8fafc;">
+
+  <!-- ═══ Interactive Background Layer ═══ -->
+  <div class="gradient-bg"></div>
+  <canvas id="bgCanvas"></canvas>
+  <div id="cursorGlow"></div>
+
+  <!-- Floating Geometric Shapes -->
+  <div class="geo-shape geo-hex" data-speed="0.3">
+    <svg viewBox="0 0 100 100"><polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" fill="none" stroke="#1e40af" stroke-width="2"/></svg>
+  </div>
+  <div class="geo-shape geo-tri" data-speed="0.5">
+    <svg viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90" fill="none" stroke="#059669" stroke-width="2"/></svg>
+  </div>
+  <div class="geo-shape geo-circle" data-speed="0.2">
+    <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#1e40af" stroke-width="1.5"/></svg>
+  </div>
+  <div class="geo-shape geo-sq" data-speed="0.4">
+    <svg viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" fill="none" stroke="#059669" stroke-width="2" rx="8"/></svg>
+  </div>
+  <div class="geo-shape geo-dot-cluster" data-speed="0.35">
+    <svg viewBox="0 0 200 150">
+      <circle cx="20" cy="30" r="4" fill="#1e40af" opacity="0.3"/>
+      <circle cx="60" cy="70" r="3" fill="#059669" opacity="0.25"/>
+      <circle cx="100" cy="20" r="5" fill="#1e40af" opacity="0.2"/>
+      <circle cx="140" cy="80" r="3" fill="#059669" opacity="0.3"/>
+      <circle cx="180" cy="40" r="4" fill="#1e40af" opacity="0.25"/>
+      <circle cx="50" cy="120" r="3" fill="#059669" opacity="0.2"/>
+      <circle cx="130" cy="130" r="5" fill="#1e40af" opacity="0.15"/>
+    </svg>
+  </div>
+
+  <!-- Header -->
+  <header class="w-full py-4 px-6 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg">
+        <span class="material-symbols-outlined text-white text-xl">fingerprint</span>
+      </div>
+      <span class="font-headline text-lg font-bold text-on-surface tracking-tight">AbsensiHub</span>
+    </div>
+    <span class="text-xs font-medium text-on-surface-variant bg-white/60 px-3 py-1 rounded-full">Enterprise v2.0</span>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex items-center justify-center p-4 sm:p-6">
+    <div class="relative w-full max-w-md">
+      <!-- Decorative blobs -->
+      <div data-motion="blob blob-left" class="absolute -top-20 -left-20 w-72 h-72 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div data-motion="blob blob-right" class="absolute -bottom-16 -right-16 w-64 h-64 bg-secondary/5 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Login Card -->
+      <div data-motion="card" class="relative glass rounded-2xl shadow-xl glow-blue p-8 sm:p-10 hover:shadow-2xl hover:glow-green transition-shadow duration-300">
+        <!-- Badge -->
+        <div data-motion="badge" class="flex items-center gap-2 mb-6">
+          <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary text-xl">event_available</span>
+          </div>
+          <span class="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full uppercase tracking-wider">Portal Absensi</span>
+        </div>
+
+        <!-- Title -->
+        <h1 data-motion="title" class="font-headline text-2xl font-bold text-on-surface tracking-tight">Selamat Datang Kembali</h1>
+        <p data-motion="subtitle" class="text-sm text-on-surface-variant mt-2 leading-relaxed">Masuk ke akun Anda untuk mengelola presensi karyawan secara terpusat</p>
+
+        <!-- Form -->
+        <form id="loginForm" data-motion="form" class="mt-8 space-y-5">
+          <!-- Username -->
+          <div data-motion="field" class="space-y-1.5">
+            <label class="block text-sm font-semibold text-on-surface" for="username">Username</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3.5 text-gray-400 text-[20px] pointer-events-none">badge</span>
+              <input id="username" type="text" required placeholder="admin atau nama karyawan"
+                data-motion="input"
+                class="w-full h-12 pl-11 pr-4 bg-white border border-gray-200 rounded-xl text-on-surface text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:scale-[1.01]">
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div data-motion="field" class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="block text-sm font-semibold text-on-surface" for="password">Kata Sandi</label>
+              <a href="#" class="text-xs font-medium text-primary hover:underline">Lupa sandi?</a>
+            </div>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3.5 text-gray-400 text-[20px] pointer-events-none">lock</span>
+              <input id="password" type="password" required placeholder="Masukkan kata sandi"
+                data-motion="input"
+                class="w-full h-12 pl-11 pr-11 bg-white border border-gray-200 rounded-xl text-on-surface text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:scale-[1.01]">
+              <button type="button" onclick="togglePassword()" data-motion="pwd-toggle" class="absolute right-3.5 text-gray-400 hover:text-primary p-1 transition-all duration-300 hover:scale-110">
+                <span class="material-symbols-outlined text-[20px]" id="pwdIcon">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember -->
+          <div data-motion="field" class="flex items-center gap-2.5">
+            <input type="checkbox" id="remember" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary">
+            <label for="remember" class="text-sm text-on-surface-variant">Ingat saya selama 30 hari</label>
+          </div>
+
+          <!-- Submit -->
+          <button data-motion="submit" type="submit" id="loginBtn"
+            class="w-full h-12 bg-primary hover:bg-blue-700 active:scale-[0.97] text-white font-headline text-sm rounded-xl shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/40 hover:scale-[1.02] flex items-center justify-center gap-2">
+            <span>Masuk</span>
+            <span class="material-symbols-outlined text-lg">arrow_forward</span>
+          </button>
+        </form>
+
+        <!-- Footer -->
+        <div class="mt-8 text-center">
+          <p class="text-xs text-gray-400">Dilindungi enkripsi end-to-end</p>
+          <p class="text-xs text-gray-400 mt-1">Butuh bantuan IT? <a href="https://wa.me/083107362661" class="text-primary font-medium hover:underline">Hubungi Helpdesk</a></p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer data-motion="footer" class="w-full py-4 px-6 flex items-center justify-between text-xs text-on-surface-variant">
+    <p>&copy; 2024 AbsensiHub Enterprise</p>
+    <div class="flex gap-4">
+      <a href="#" class="hover:text-on-surface">Security</a>
+      <a href="#" class="hover:text-on-surface">Terms</a>
+    </div>
+  </footer>
+
+  <!-- Motion Animations -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const m = window.Motion;
+
+      // ── Entrance Delays ──
+      const delays = {
+        blob: 0, badge: 200, title: 400, subtitle: 600,
+        form: 800, field: 900, submit: 1200, sso: 1400,
+        ssoBtn: 1500, footer: 1600, pwdToggle: 1100
+      };
+
+      // ── 1. Decorative Blobs — Float ──
+      document.querySelectorAll('[data-motion="blob"]').forEach((el, i) => {
+        const dir = i === 0 ? -1 : 1;
+        m.animate(el, {
+          y: [0, dir * 12, 0],
+          opacity: [0.6, 0.8, 0.6]
+        }, { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: delays.blob / 1000 });
+      });
+
+      // ── 2. Card — Entrance + Hover Glow ──
+      const card = document.querySelector('[data-motion="card"]');
+      if (card) {
+        m.animate(card, { opacity: [0, 1], y: [30, 0], scale: [0.97, 1] }, { duration: 0.7, delay: delays.badge / 1000, ease: 'easeOut' });
+        // Hover glow animation
+        card.addEventListener('mouseenter', () => {
+          m.animate(card, { boxShadow: ['0 0 60px rgba(30,64,175,0.15)', '0 0 80px rgba(5,150,105,0.3)'] }, { duration: 0.4 });
+        });
+        card.addEventListener('mouseleave', () => {
+          m.animate(card, { boxShadow: ['0 0 80px rgba(5,150,105,0.3)', '0 0 60px rgba(30,64,175,0.15)'] }, { duration: 0.4 });
+        });
+      }
+
+      // ── 3. Badge ──
+      const badge = document.querySelector('[data-motion="badge"]');
+      if (badge) m.animate(badge, { opacity: [0, 1], y: [-10, 0], scale: [0.9, 1] }, { duration: 0.5, delay: delays.badge / 1000 });
+
+      // ── 4. Title ──
+      const title = document.querySelector('[data-motion="title"]');
+      if (title) m.animate(title, { opacity: [0, 1], y: [20, 0] }, { duration: 0.6, delay: delays.title / 1000, ease: 'easeOut' });
+
+      // ── 5. Subtitle ──
+      const subtitle = document.querySelector('[data-motion="subtitle"]');
+      if (subtitle) m.animate(subtitle, { opacity: [0, 1], y: [15, 0] }, { duration: 0.6, delay: delays.subtitle / 1000, ease: 'easeOut' });
+
+      // ── 6. Form ──
+      const form = document.querySelector('[data-motion="form"]');
+      if (form) m.animate(form, { opacity: [0, 1], y: [20, 0] }, { duration: 0.6, delay: delays.form / 1000, ease: 'easeOut' });
+
+      // ── 7. Fields — Stagger with Hover ──
+      const fields = document.querySelectorAll('[data-motion="field"]');
+      fields.forEach((field, i) => {
+        m.animate(field, { opacity: [0, 1], x: [-15, 0] }, { duration: 0.4, delay: (delays.field + i * 80) / 1000, ease: 'easeOut' });
+        // Hover scale on field containers
+        field.addEventListener('mouseenter', () => {
+          m.animate(field, { scale: [1, 1.01] }, { duration: 0.2 });
+        });
+        field.addEventListener('mouseleave', () => {
+          m.animate(field, { scale: [1.01, 1] }, { duration: 0.2 });
+        });
+      });
+
+      // ── 8. Input Focus Glow ──
+      document.querySelectorAll('[data-motion="input"]').forEach(input => {
+        input.addEventListener('focus', () => {
+          m.animate(input, { borderColor: ['#e2e8f0', '#1e40af'], boxShadow: ['0 0 0 0 transparent', '0 0 0 3px rgba(30,64,175,0.15)'] }, { duration: 0.3 });
+        });
+        input.addEventListener('blur', () => {
+          m.animate(input, { borderColor: ['#1e40af', '#e2e8f0'], boxShadow: ['0 0 0 3px rgba(30,64,175,0.15)', '0 0 0 0 transparent'] }, { duration: 0.3 });
+        });
+      });
+
+      // ── 9. Submit Button ──
+      const submitBtn = document.querySelector('[data-motion="submit"]');
+      if (submitBtn) {
+        m.animate(submitBtn, { opacity: [0, 1], scale: [0.95, 1] }, { duration: 0.5, delay: delays.submit / 1000, ease: 'easeOut' });
+        // Hover glow
+        submitBtn.addEventListener('mouseenter', () => {
+          m.animate(submitBtn, { boxShadow: ['0 0 25px rgba(30,64,175,0.25)', '0 0 40px rgba(30,64,175,0.4)'], scale: [1, 1.02] }, { duration: 0.3 });
+        });
+        submitBtn.addEventListener('mouseleave', () => {
+          m.animate(submitBtn, { boxShadow: ['0 0 40px rgba(30,64,175,0.4)', '0 0 25px rgba(30,64,175,0.25)'], scale: [1.02, 1] }, { duration: 0.3 });
+        });
+      }
+
+      // ── 10. Password Toggle ──
+      const pwdToggle = document.querySelector('[data-motion="pwd-toggle"]');
+      if (pwdToggle) m.animate(pwdToggle, { opacity: [0, 1], scale: [0.8, 1] }, { duration: 0.4, delay: delays.pwdToggle / 1000 });
+
+      // ── 11. SSO Section ──
+      const sso = document.querySelector('[data-motion="sso"]');
+      if (sso) m.animate(sso, { opacity: [0, 1], y: [15, 0] }, { duration: 0.5, delay: delays.sso / 1000, ease: 'easeOut' });
+      document.querySelectorAll('[data-motion="sso-btn"]').forEach((btn, i) => {
+        m.animate(btn, { opacity: [0, 1], y: [10, 0], scale: [0.9, 1] }, { duration: 0.4, delay: (delays.ssoBtn + i * 100) / 1000, ease: 'easeOut' });
+      });
+
+      // ── 12. Footer ──
+      const footer = document.querySelector('[data-motion="footer"]');
+      if (footer) m.animate(footer, { opacity: [0, 1] }, { duration: 0.5, delay: delays.footer / 1000 });
+
+      // ═══════════════════════════════════════
+      // ── SUBMIT ANIMATION HANDLER ──
+      // ═══════════════════════════════════════
+      const formEl = document.getElementById('loginForm');
+      const loginBtn = document.getElementById('loginBtn');
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      const cardEl = document.querySelector('[data-motion="card"]');
+      const formContainer = formEl.querySelector('[data-motion="form"]');
+
+      formEl.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        if (!username || !password) {
+          // Shake animation on error
+          if (formContainer) {
+            formContainer.classList.add('shake');
+            setTimeout(() => formContainer.classList.remove('shake'), 500);
+          }
+          // Shake input fields
+          document.querySelectorAll('[data-motion="input"]').forEach(inp => {
+            inp.classList.add('shake');
+            setTimeout(() => inp.classList.remove('shake'), 500);
+          });
+          return;
+        }
+
+        // Button loading state with Motion
+        loginBtn.disabled = true;
+        m.animate(loginBtn, { scale: [1, 0.97], opacity: [1, 0.85] }, { duration: 0.2 });
+        loginBtn.innerHTML = '<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div><span>Masuk...</span>';
+        loadingOverlay.classList.remove('hidden');
+        // Pulse the loading spinner
+        const spinner = loadingOverlay.querySelector('.animate-spin');
+        if (spinner) m.animate(spinner, { scale: [1, 1.2, 1] }, { duration: 1, repeat: Infinity, ease: 'easeInOut' });
+
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            // Success animation
+            m.animate(loginBtn, { scale: [0.97, 1.02, 1], backgroundColor: ['#1e40af', '#059669'] }, { duration: 0.5 });
+            loginBtn.innerHTML = '<span class="material-symbols-outlined text-xl">check_circle</span><span>Berhasil!</span>';
+            loginBtn.classList.add('pulse-success');
+            loadingOverlay.classList.add('hidden');
+
+            // Success bounce on card
+            if (cardEl) m.animate(cardEl, { scale: [1, 1.02, 1] }, { duration: 0.6, ease: 'easeOut' });
+
+            setTimeout(() => {
+              window.location.href = data.user.role === 'admin' ? '/admin.html' : '/karyawan.html';
+            }, 800);
+          } else {
+            // Error shake
+            if (formContainer) {
+              formContainer.classList.add('shake');
+              setTimeout(() => formContainer.classList.remove('shake'), 500);
+            }
+            // Button error glow
+            m.animate(loginBtn, { boxShadow: ['0 0 25px rgba(30,64,175,0.25)', '0 0 30px rgba(220,38,38,0.4)'], scale: [1, 1.02, 1] }, { duration: 0.4 });
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '<span>Masuk</span><span class="material-symbols-outlined text-lg">arrow_forward</span>';
+            loadingOverlay.classList.add('hidden');
+            setTimeout(() => {
+              m.animate(loginBtn, { boxShadow: ['0 0 30px rgba(220,38,38,0.4)', '0 0 25px rgba(30,64,175,0.25)'] }, { duration: 0.4 });
+            }, 1000);
+          }
+        } catch (err) {
+          // Network error
+          m.animate(loginBtn, { scale: [0.97, 1] }, { duration: 0.3 });
+          loginBtn.innerHTML = '<span>Masuk</span><span class="material-symbols-outlined text-lg">arrow_forward</span>';
+          loadingOverlay.classList.add('hidden');
+        }
+      });
+    });
+  </script>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-6 flex flex-col items-center gap-3 shadow-2xl">
+      <div class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+      <span class="text-sm font-medium text-on-surface">Memproses login...</span>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed top-6 right-6 bg-white shadow-xl rounded-xl p-4 z-50 flex items-center gap-3 max-w-sm border-l-4" style="border-left-color: #dc2626;">
+    <span class="material-symbols-outlined text-[22px]" id="toastIcon">error</span>
+    <span class="text-sm text-on-surface" id="toastText"></span>
+  </div>
+
+  <script>
+    function togglePassword() {
+      const p = document.getElementById('password');
+      const i = document.getElementById('pwdIcon');
+      if (p.type === 'password') { p.type = 'text'; i.textContent = 'visibility_off'; }
+      else { p.type = 'password'; i.textContent = 'visibility'; }
+    }
+
+    function showToast(msg, type = 'error') {
+      const t = document.getElementById('toast');
+      const icon = document.getElementById('toastIcon');
+      const text = document.getElementById('toastText');
+      t.classList.remove('hidden');
+      t.style.borderLeftColor = type === 'success' ? '#059669' : '#dc2626';
+      icon.textContent = type === 'success' ? 'check_circle' : 'error';
+      icon.style.color = type === 'success' ? '#059669' : '#dc2626';
+      text.textContent = msg;
+      setTimeout(() => t.classList.add('hidden'), 3500);
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      if (!username || !password) { showToast('Isi semua field!'); return; }
+
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>';
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Selamat datang, ' + data.user.full_name + '!', 'success');
+          setTimeout(() => {
+            window.location.href = data.user.role === 'admin' ? '/admin.html' : '/karyawan.html';
+          }, 800);
+        } else {
+          showToast(data.error || 'Gagal login');
+          btn.disabled = false;
+          btn.innerHTML = '<span>Masuk</span><span class="material-symbols-outlined text-lg">arrow_forward</span>';
+          document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+      } catch (err) {
+        showToast('Koneksi server gagal');
+        btn.disabled = false;
+        btn.innerHTML = '<span>Masuk</span><span class="material-symbols-outlined text-lg">arrow_forward</span>';
+        document.getElementById('loadingOverlay').classList.add('hidden');
+      }
+    });
+
+    document.getElementById('password').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('loginBtn').click(); });
+
+    // Check session
+    fetch('/api/auth/session').then(r => r.json()).then(d => {
+      if (d.authenticated) window.location.href = d.user.role === 'admin' ? '/admin.html' : '/karyawan.html';
+    }).catch(() => {});
+
+    // ═══════════════════════════════════════
+    // ═══ INTERACTIVE CANVAS PARTICLE SYSTEM ═══
+    // ═══════════════════════════════════════
+    (() => {
+      const canvas = document.getElementById('bgCanvas');
+      const ctx = canvas.getContext('2d');
+      let W, H, mouse = { x: -9999, y: -9999 };
+      const particles = [];
+      const PARTICLE_COUNT = 80;
+      const CONNECTION_DIST = 150;
+      const MOUSE_RADIUS = 180;
+
+      // Colors
+      const COLORS = [
+        'rgba(30,64,175,',   // primary blue
+        'rgba(5,150,105,',   // secondary green
+        'rgba(99,102,241,',  // indigo
+        'rgba(14,165,233,',  // sky
+      ];
+
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      // Particle class
+      class Particle {
+        constructor() {
+          this.x = Math.random() * W;
+          this.y = Math.random() * H;
+          this.r = Math.random() * 3 + 1;
+          this.baseR = this.r;
+          this.vx = (Math.random() - 0.5) * 0.8;
+          this.vy = (Math.random() - 0.5) * 0.8;
+          this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+          this.alpha = Math.random() * 0.4 + 0.1;
+          this.pulsePhase = Math.random() * Math.PI * 2;
+          this.pulseSpeed = Math.random() * 0.02 + 0.01;
+        }
+
+        update() {
+          // Pulse radius
+          this.pulsePhase += this.pulseSpeed;
+          this.r = this.baseR + Math.sin(this.pulsePhase) * 0.5;
+
+          // Mouse interaction — repel
+          const dx = this.x - mouse.x;
+          const dy = this.y - mouse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < MOUSE_RADIUS && mouse.x > 0) {
+            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS;
+            const angle = Math.atan2(dy, dx);
+            this.vx += Math.cos(angle) * force * 1.5;
+            this.vy += Math.sin(angle) * force * 1.5;
+            this.r = this.baseR + force * 3; // grow near cursor
+          }
+
+          // Damping
+          this.vx *= 0.98;
+          this.vy *= 0.98;
+
+          this.x += this.vx;
+          this.y += this.vy;
+
+          // Bounce off edges
+          if (this.x < 0) { this.x = 0; this.vx *= -0.5; }
+          if (this.x > W) { this.x = W; this.vx *= -0.5; }
+          if (this.y < 0) { this.y = 0; this.vy *= -0.5; }
+          if (this.y > H) { this.y = H; this.vy *= -0.5; }
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+          ctx.fillStyle = this.color + this.alpha + ')';
+          ctx.fill();
+
+          // Glow effect
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.r * 3, 0, Math.PI * 2);
+          const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 3);
+          grad.addColorStop(0, this.color + '0.08)');
+          grad.addColorStop(1, this.color + '0)');
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+      }
+
+      // Create particles
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push(new Particle());
+      }
+
+      // Draw connections
+      function drawConnections() {
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < CONNECTION_DIST) {
+              const alpha = (1 - dist / CONNECTION_DIST) * 0.12;
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(30,64,175,${alpha})`;
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+            }
+          }
+
+          // Mouse connections
+          const dxM = particles[i].x - mouse.x;
+          const dyM = particles[i].y - mouse.y;
+          const distM = Math.sqrt(dxM * dxM + dyM * dyM);
+          if (distM < MOUSE_RADIUS && mouse.x > 0) {
+            const alpha = (1 - distM / MOUSE_RADIUS) * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = `rgba(5,150,105,${alpha})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Animation loop
+      function animate() {
+        ctx.clearRect(0, 0, W, H);
+        particles.forEach(p => {
+          p.update();
+          p.draw();
+        });
+        drawConnections();
+        requestAnimationFrame(animate);
+      }
+      animate();
+
+      // Mouse tracking
+      document.addEventListener('mousemove', e => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        // Move cursor glow
+        const glow = document.getElementById('cursorGlow');
+        if (glow) {
+          glow.style.left = e.clientX + 'px';
+          glow.style.top = e.clientY + 'px';
+        }
+      });
+
+      // Touch support
+      document.addEventListener('touchmove', e => {
+        if (e.touches.length > 0) {
+          mouse.x = e.touches[0].clientX;
+          mouse.y = e.touches[0].clientY;
+        }
+      }, { passive: true });
+      document.addEventListener('touchend', () => {
+        mouse.x = -9999;
+        mouse.y = -9999;
+      });
+
+      // Geometric shapes react to scroll
+      let scrollY = 0;
+      window.addEventListener('scroll', () => { scrollY = window.scrollY; });
+      const geoShapes = document.querySelectorAll('.geo-shape');
+      function updateShapes() {
+        geoShapes.forEach(shape => {
+          const speed = parseFloat(shape.dataset.speed) || 0.3;
+          const y = scrollY * speed;
+          shape.style.transform = `translateY(${-y}px)`;
+        });
+        requestAnimationFrame(updateShapes);
+      }
+      updateShapes();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - AbsensiHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1e40af', 'primary-light': '#dbeafe',
+            secondary: '#059669', 'secondary-light': '#d1fae5',
+            surface: '#f8fafc', 'surface-card': '#ffffff',
+            'on-surface': '#0f172a', 'on-surface-variant': '#64748b',
+            'on-primary': '#ffffff', error: '#dc2626', 'error-light': '#fee2e2',
+            warning: '#d97706', 'warning-light': '#fef3c7',
+          },
+          fontFamily: {
+            headline: ['Plus Jakarta Sans', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
+    .card { background: #fff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06); }
+    .stat-card { transition: all 0.2s; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+    .tab-btn { transition: all 0.2s; }
+    .tab-btn.active { background: #1e40af; color: white; }
+    table th { position: sticky; top: 0; background: #f8fafc; z-index: 10; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .drop-zone { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 40px; text-align: center; transition: all 0.2s; cursor: pointer; }
+    .drop-zone:hover, .drop-zone.dragover { border-color: #1e40af; background: #eff6ff; }
+    .application-card { background:#fff; border-radius:12px; padding:16px; border:1px solid #e2e8f0; margin-bottom:12px; transition:all 0.2s; }
+    .application-card:hover { box-shadow:0 4px 15px rgba(0,0,0,0.06); }
+    .app-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; text-transform:uppercase; }
+    .app-badge.izin { background:#dbeafe; color:#1e40af; }
+    .app-badge.cuti { background:#d1fae5; color:#059669; }
+    .app-badge.sakit { background:#fee2e2; color:#dc2626; }
+    .app-status { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; }
+    .app-status.pending { background:#fef3c7; color:#d97706; }
+    .app-status.approved { background:#d1fae5; color:#059669; }
+    .app-status.rejected { background:#fee2e2; color:#dc2626; }
+    .notification-item { padding:12px 16px; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
+    .notification-item:hover { background:#f8fafc; }
+    .notification-item.unread { background:#eff6ff; }
+    .notif-icon { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .notif-icon.info { background:#dbeafe; color:#1e40af; }
+    .notif-icon.warning { background:#fef3c7; color:#d97706; }
+    .notif-icon.success { background:#d1fae5; color:#059669; }
+    .notif-icon.error { background:#fee2e2; color:#dc2626; }
+    .announcement-card { background:#fff; border-radius:12px; padding:16px; border-left:4px solid #1e40af; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Top Navigation -->
+  <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
+          <span class="material-symbols-outlined text-white text-lg">fingerprint</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-headline text-sm font-bold text-on-surface leading-none">AbsensiHub</span>
+          <span class="text-[10px] text-on-surface-variant font-medium">Admin Dashboard</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-2 text-xs text-on-surface-variant bg-gray-50 px-3 py-1.5 rounded-full">
+          <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+          <span id="syncStatus">Sync: Memuat...</span>
+        </div>
+        <!-- Notification Bell -->
+        <div class="relative">
+          <button onclick="toggleNotificationPanel()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors relative" title="Notifikasi">
+            <span class="material-symbols-outlined text-gray-600 text-xl">notifications</span>
+            <span id="notifBadge" class="hidden absolute -top-0.5 -right-0.5 w-5 h-5 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center">0</span>
+          </button>
+          <div id="notificationPanel" class="hidden absolute right-0 top-full mt-2 w-96 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 max-h-96 overflow-y-auto">
+            <div class="px-4 py-2 border-b border-gray-100 flex items-center justify-between"><span class="font-semibold text-sm text-on-surface">Notifikasi</span><button onclick="markAllNotificationsRead()" class="text-xs text-primary hover:underline">Tandai semua dibaca</button></div>
+            <div id="notifList"><p class="px-4 py-3 text-xs text-on-surface-variant text-center">Memuat...</p></div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 pl-2 border-l border-gray-200">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-white text-sm">person</span></div>
+          <div class="hidden sm:flex flex-col"><span class="text-xs font-semibold text-on-surface" data-user-name>Admin HRD</span><span class="text-[10px] text-on-surface-variant">Super Admin</span></div>
+        </div>
+        <div class="relative">
+          <button onclick="toggleUserMenu()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Menu"><span class="material-symbols-outlined text-gray-400 text-xl">expand_more</span></button>
+          <div id="userMenu" class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+            <button onclick="showChangePasswordModal()" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-gray-50 transition-colors"><span class="material-symbols-outlined text-lg text-gray-400">lock</span> Ganti Password</button>
+            <hr class="my-1 border-gray-100">
+            <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-error hover:bg-red-50 transition-colors"><span class="material-symbols-outlined text-lg">logout</span> Keluar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-xs font-semibold text-secondary bg-secondary-light/60 px-2.5 py-1 rounded-full">Real-Time</span>
+          <span class="text-xs text-on-surface-variant">Data dari Excel fingerprint</span>
+        </div>
+        <h1 class="font-headline text-2xl font-bold text-on-surface">Dashboard Kehadiran Karyawan</h1>
+        <p class="text-sm text-on-surface-variant mt-1">Monitoring presensi real-time berbasis data Excel fingerprint</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <select id="monthFilter" onchange="onMonthChange()" class="h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+          <option value="">Semua Bulan</option>
+        </select>
+        <button onclick="showTab('recap')" class="tab-btn active px-4 py-2 rounded-xl text-sm font-semibold" data-tab="recap">Rekap Karyawan</button>
+        <button onclick="showTab('detail')" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold text-on-surface-variant hover:bg-gray-100" data-tab="detail">Detail Harian</button>
+        <button onclick="showTab('cuti')" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold text-on-surface-variant hover:bg-gray-100" data-tab="cuti">Kelola Cuti</button>
+        <button onclick="showTab('pengajuan')" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold text-on-surface-variant hover:bg-gray-100" data-tab="pengajuan">Pengajuan</button>
+        <button onclick="showTab('pengumuman')" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold text-on-surface-variant hover:bg-gray-100" data-tab="pengumuman">Pengumuman</button>
+        <button onclick="showTab('import')" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold text-on-surface-variant hover:bg-gray-100" data-tab="import">Riwayat Import</button>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="kpiContainer">
+      <div class="card stat-card p-5 relative overflow-hidden">
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r"></div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Total Karyawan</span>
+          <div class="w-9 h-9 rounded-xl bg-primary-light flex items-center justify-center"><span class="material-symbols-outlined text-primary text-lg">group</span></div>
+        </div>
+        <div class="font-headline text-3xl font-bold text-on-surface" id="statTotalKaryawan">-</div>
+        <p class="text-xs text-on-surface-variant mt-1" id="statTotalKaryawanSub">Memuat...</p>
+      </div>
+      <div class="card stat-card p-5 relative overflow-hidden">
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary rounded-r"></div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Tepat Waktu</span>
+          <div class="w-9 h-9 rounded-xl bg-secondary-light flex items-center justify-center"><span class="material-symbols-outlined text-secondary text-lg">check_circle</span></div>
+        </div>
+        <div class="font-headline text-3xl font-bold text-on-surface" id="statOnTime">-</div>
+        <p class="text-xs text-on-surface-variant mt-1" id="statOnTimeSub">Memuat...</p>
+      </div>
+      <div class="card stat-card p-5 relative overflow-hidden">
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-warning rounded-r"></div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Terlambat</span>
+          <div class="w-9 h-9 rounded-xl bg-warning-light flex items-center justify-center"><span class="material-symbols-outlined text-warning text-lg">schedule</span></div>
+        </div>
+        <div class="font-headline text-3xl font-bold text-on-surface" id="statLate">-</div>
+        <p class="text-xs text-on-surface-variant mt-1" id="statLateSub">Memuat...</p>
+      </div>
+      <div class="card stat-card p-5 relative overflow-hidden">
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r"></div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Hari Kerja</span>
+          <div class="w-9 h-9 rounded-xl bg-primary-light flex items-center justify-center"><span class="material-symbols-outlined text-primary text-lg">calendar_today</span></div>
+        </div>
+        <div class="font-headline text-3xl font-bold text-on-surface" id="statDays">-</div>
+        <p class="text-xs text-on-surface-variant mt-1" id="statDaysSub">Memuat...</p>
+      </div>
+    </div>
+
+    <!-- Tab: Rekap Karyawan -->
+    <div id="tab-recap" class="fade-in">
+      <div class="card overflow-hidden">
+        <div class="p-5 border-b border-gray-100">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="font-headline text-lg font-bold text-on-surface">Rekap Per Karyawan</h2>
+              <p class="text-xs text-on-surface-variant mt-0.5">Ringkasan kehadiran seluruh karyawan</p>
+            </div>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+              <input id="searchRecap" type="text" placeholder="Cari nama karyawan..." class="w-full sm:w-72 h-10 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" oninput="searchRecapTable()">
+            </div>
+          </div>
+        </div>
+        <div class="overflow-x-auto" style="max-height: 500px; overflow-y: auto;">
+          <table class="w-full text-sm" id="recapTable">
+            <thead>
+              <tr class="text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                <th class="px-5 py-3">No</th>
+                <th class="px-5 py-3 cursor-pointer hover:text-primary" onclick="sortRecap('employee_name')">Nama <span id="sortIcon-employee_name" class="text-[10px]">↕</span></th>
+                <th class="px-5 py-3 text-center cursor-pointer hover:text-primary" onclick="sortRecap('days_recorded')">Hari Tercatat <span id="sortIcon-days_recorded" class="text-[10px]">↕</span></th>
+                <th class="px-5 py-3 text-center cursor-pointer hover:text-primary" onclick="sortRecap('days_on_time')">Tepat Waktu <span id="sortIcon-days_on_time" class="text-[10px]">↕</span></th>
+                <th class="px-5 py-3 text-center cursor-pointer hover:text-primary" onclick="sortRecap('days_late_toleransi')">Telat Toleransi <span id="sortIcon-days_late_toleransi" class="text-[10px]">↕</span></th>
+                <th class="px-5 py-3 text-center cursor-pointer hover:text-primary" onclick="sortRecap('days_late_potongan')">Telat Potongan <span id="sortIcon-days_late_potongan" class="text-[10px]">↕</span></th>
+                <th class="px-5 py-3 text-center cursor-pointer hover:text-primary" onclick="sortRecap('days_early_leave')">Pulang Cepat <span id="sortIcon-days_early_leave" class="text-[10px]">↕</span></th>
+                <th class="px-5 py-3 text-center cursor-pointer hover:text-primary" onclick="sortRecap('total_late_minutes')">Total Menit Telat <span id="sortIcon-total_late_minutes" class="text-[10px]">↕</span></th>
+                <th class="px-5 py-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="recapBody" class="divide-y divide-gray-50">
+              <tr><td colspan="9" class="px-5 py-10 text-center text-sm text-on-surface-variant">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Detail Harian -->
+    <div id="tab-detail" class="hidden fade-in">
+      <div class="card overflow-hidden">
+        <div class="p-5 border-b border-gray-100">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="font-headline text-lg font-bold text-on-surface">Detail Harian Absensi</h2>
+              <p class="text-xs text-on-surface-variant mt-0.5">Log presensi harian per karyawan</p>
+            </div>
+            <div class="flex gap-2">
+              <select id="filterEmployee" onchange="loadDetail()" class="h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"><option value="">Semua Karyawan</option></select>
+              <select id="filterDay" onchange="loadDetail()" class="h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"><option value="">Semua Hari</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="overflow-x-auto" style="max-height: 500px; overflow-y: auto;">
+          <table class="w-full text-sm" id="detailTable">
+            <thead><tr class="text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+              <th class="px-5 py-3">No</th><th class="px-5 py-3">Nama</th><th class="px-5 py-3 text-center">Tanggal</th><th class="px-5 py-3">Hari</th>
+              <th class="px-5 py-3 text-center">Jam Masuk</th><th class="px-5 py-3 text-center">Jam Pulang</th><th class="px-5 py-3">Shift</th>
+              <th class="px-5 py-3 text-center">Menit Telat</th><th class="px-5 py-3">Status</th>
+            </tr></thead>
+            <tbody id="detailBody" class="divide-y divide-gray-50"><tr><td colspan="9" class="px-5 py-10 text-center text-sm text-on-surface-variant">Memuat data...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Kelola Cuti -->
+    <div id="tab-cuti" class="hidden fade-in">
+      <div class="card overflow-hidden">
+        <div class="p-5 border-b border-gray-100">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="font-headline text-lg font-bold text-on-surface">Kelola Sisa Cuti Karyawan</h2>
+              <p class="text-xs text-on-surface-variant mt-0.5">Atur jatah cuti dan pantau sisa cuti setiap karyawan</p>
+            </div>
+            <div class="flex gap-2">
+              <input id="searchCuti" type="text" placeholder="Cari nama..." oninput="searchCutiTable()" class="w-48 h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+              <button onclick="showBatchCutiModal()" class="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors shadow-sm"><span class="material-symbols-outlined text-lg">groups</span>Atur Semua</button>
+              <button onclick="showAddCutiModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition-colors shadow-sm"><span class="material-symbols-outlined text-lg">add</span>Tambah</button>
+            </div>
+          </div>
+        </div>
+        <div class="overflow-x-auto" style="max-height: 500px; overflow-y: auto;">
+          <table class="w-full text-sm" id="cutiTable">
+            <thead><tr class="text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+              <th class="px-5 py-3">No</th><th class="px-5 py-3">Nama Karyawan</th><th class="px-5 py-3 text-center">Jatah Cuti</th><th class="px-5 py-3 text-center">Terpakai</th>
+              <th class="px-5 py-3 text-center">Sisa Cuti</th><th class="px-5 py-3 text-center">Aksi</th>
+            </tr></thead>
+            <tbody id="cutiBody" class="divide-y divide-gray-50"><tr><td colspan="6" class="px-5 py-10 text-center text-sm text-on-surface-variant">Memuat data...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card overflow-hidden mt-6">
+        <div class="p-5 border-b border-gray-100">
+          <div class="flex items-center justify-between">
+            <div><h2 class="font-headline text-lg font-bold text-on-surface">Riwayat Penggunaan Cuti</h2><p class="text-xs text-on-surface-variant mt-0.5">Log pengambilan cuti karyawan</p></div>
+            <select id="cutiHistoryFilter" onchange="loadLeaveHistory()" class="h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"><option value="">Semua Karyawan</option></select>
+          </div>
+        </div>
+        <div class="overflow-x-auto" style="max-height: 300px; overflow-y: auto;">
+          <table class="w-full text-sm">
+            <thead><tr class="text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+              <th class="px-5 py-3">No</th><th class="px-5 py-3">Nama</th><th class="px-5 py-3 text-center">Hari Dipakai</th><th class="px-5 py-3">Keterangan</th><th class="px-5 py-3">Bulan</th><th class="px-5 py-3 text-center">Aksi</th>
+            </tr></thead>
+            <tbody id="cutiHistoryBody" class="divide-y divide-gray-50"><tr><td colspan="6" class="px-5 py-10 text-center text-sm text-on-surface-variant">Memuat data...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Pengajuan -->
+    <div id="tab-pengajuan" class="hidden fade-in">
+      <div class="card overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="font-headline text-lg font-bold text-on-surface">Kelola Pengajuan Izin/Cuti/Sakit</h2>
+            <p class="text-xs text-on-surface-variant mt-0.5">Lihat dan proses pengajuan karyawan</p>
+          </div>
+          <div class="flex gap-2">
+            <select id="filterAppStatus" onchange="loadApplications()" class="h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+              <option value="semua">Semua Status</option><option value="pending">Menunggu</option><option value="approved">Disetujui</option><option value="rejected">Ditolak</option>
+            </select>
+            <select id="filterAppEmployee" onchange="loadApplications()" class="h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"><option value="">Semua Karyawan</option></select>
+          </div>
+        </div>
+        <div class="overflow-x-auto" style="max-height: 500px; overflow-y: auto;">
+          <table class="w-full text-sm">
+            <thead><tr class="text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+              <th class="px-5 py-3">No</th><th class="px-5 py-3">Nama</th><th class="px-5 py-3">Jenis</th><th class="px-5 py-3">Periode</th><th class="px-5 py-3">Alasan</th><th class="px-5 py-3 text-center">Bukti</th><th class="px-5 py-3 text-center">Status</th><th class="px-5 py-3 text-center">Aksi</th>
+            </tr></thead>
+            <tbody id="appTableBody" class="divide-y divide-gray-50"><tr><td colspan="8" class="px-5 py-10 text-center text-sm text-on-surface-variant">Memuat data...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Pengumuman -->
+    <div id="tab-pengumuman" class="hidden fade-in">
+      <div class="card overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="font-headline text-lg font-bold text-on-surface">Pengumuman</h2>
+            <p class="text-xs text-on-surface-variant mt-0.5">Buat dan kelola pengumuman untuk semua karyawan</p>
+          </div>
+          <button onclick="showAnnouncementModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition-colors shadow-sm"><span class="material-symbols-outlined text-lg">add</span>Buat Pengumuman</button>
+        </div>
+        <div class="p-5" id="announcementListAdmin">
+          <p class="text-sm text-on-surface-variant text-center py-8">Memuat...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Riwayat Import -->
+    <div id="tab-import" class="hidden fade-in">
+      <div class="card p-6">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="font-headline text-lg font-bold text-on-surface">Riwayat Import Excel</h2>
+            <p class="text-xs text-on-surface-variant mt-0.5">File absensi fingerprint yang telah di-import</p>
+          </div>
+          <button onclick="showUploadModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition-colors shadow-sm"><span class="material-symbols-outlined text-lg">upload_file</span>Upload File Baru</button>
+        </div>
+        <div id="importHistory" class="space-y-3"><p class="text-sm text-on-surface-variant text-center py-8">Memuat...</p></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Upload Modal -->
+  <div id="uploadModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div><h3 class="font-headline text-lg font-bold text-on-surface">Upload File Excel</h3><p class="text-xs text-on-surface-variant">Data akan menggantikan data lama untuk bulan yang dipilih</p></div>
+        <button onclick="closeUploadModal()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors"><span class="material-symbols-outlined text-gray-400">close</span></button>
+      </div>
+      <div class="p-6">
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div><label class="block text-sm font-semibold text-on-surface mb-2">Bulan</label><select id="uploadMonth" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"><option value="">-- Bulan --</option></select></div>
+          <div><label class="block text-sm font-semibold text-on-surface mb-2">Tahun</label><select id="uploadYear" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"><option value="">-- Tahun --</option></select></div>
+        </div>
+        <div id="dropZone" class="drop-zone" onclick="document.getElementById('fileInput').click()">
+          <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden" onchange="onFileSelect(this)">
+          <span class="material-symbols-outlined text-4xl text-gray-300 mb-2">cloud_upload</span>
+          <p class="text-sm font-semibold text-on-surface" id="dropLabel">Klik atau seret file Excel ke sini</p>
+          <p class="text-xs text-on-surface-variant mt-1">Format: .xlsx atau .xls (Maks 10MB)</p>
+        </div>
+        <div id="selectedFile" class="hidden mt-4 p-3 bg-gray-50 rounded-xl flex items-center gap-3">
+          <span class="material-symbols-outlined text-primary text-xl">description</span>
+          <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-on-surface truncate" id="selectedFileName">-</p><p class="text-xs text-on-surface-variant" id="selectedFileSize">-</p></div>
+          <button onclick="clearFile()" class="p-1 rounded-lg hover:bg-gray-200 transition-colors"><span class="material-symbols-outlined text-gray-400 text-lg">close</span></button>
+        </div>
+        <button id="uploadBtn" onclick="doUpload()" disabled class="mt-4 w-full h-11 bg-primary hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-headline text-sm rounded-xl shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2"><span class="material-symbols-outlined text-lg">upload_file</span><span>Upload & Import</span></button>
+        <div id="uploadProgress" class="hidden mt-4"><div class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl"><div class="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div><span class="text-sm text-primary font-medium">Mengimport data...</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Announcement Modal -->
+  <div id="announcementModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div><h3 class="font-headline text-lg font-bold text-on-surface">Buat Pengumuman</h3><p class="text-xs text-on-surface-variant">Kirim pengumuman ke semua karyawan</p></div>
+        <button onclick="closeAnnouncementModal()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors"><span class="material-symbols-outlined text-gray-400">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Judul</label><input type="text" id="annTitle" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Judul pengumuman..."></div>
+        <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Konten</label><textarea id="annContent" rows="4" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none" placeholder="Tuliskan isi pengumuman..."></textarea></div>
+        <button onclick="saveAnnouncement()" class="w-full h-11 bg-primary hover:bg-blue-800 text-white font-headline text-sm rounded-xl shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2"><span class="material-symbols-outlined text-lg">publish</span>Kirim Pengumuman</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div id="changePasswordModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+      <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div><h3 class="font-headline text-lg font-bold text-on-surface">Ganti Password</h3><p class="text-xs text-on-surface-variant">Masukkan password lama dan baru</p></div>
+        <button onclick="closeChangePasswordModal()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors"><span class="material-symbols-outlined text-gray-400">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Password Lama</label><input type="password" id="oldPassword" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Masukkan password lama"></div>
+        <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Password Baru</label><input type="password" id="newPassword" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Masukkan password baru"></div>
+        <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Konfirmasi Password Baru</label><input type="password" id="confirmPassword" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Ulangi password baru"></div>
+        <button onclick="doChangePassword()" class="w-full h-11 bg-primary hover:bg-blue-800 text-white font-headline text-sm rounded-xl shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2"><span class="material-symbols-outlined text-lg">lock</span>Simpan Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee Detail Modal -->
+  <div id="detailModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden">
+      <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div><h3 class="font-headline text-lg font-bold text-on-surface" id="modalTitle">Detail Karyawan</h3><p class="text-xs text-on-surface-variant">Log presensi harian</p></div>
+        <button onclick="closeModal()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors"><span class="material-symbols-outlined text-gray-400">close</span></button>
+      </div>
+      <div class="overflow-y-auto" style="max-height: 65vh;"><table class="w-full text-sm">
+        <thead><tr class="text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider bg-gray-50">
+          <th class="px-5 py-3">Tanggal</th><th class="px-5 py-3">Hari</th><th class="px-5 py-3 text-center">Jam Masuk</th><th class="px-5 py-3 text-center">Jam Pulang</th><th class="px-5 py-3">Shift</th><th class="px-5 py-3 text-center">Telat</th><th class="px-5 py-3">Status</th>
+        </tr></thead>
+        <tbody id="modalBody" class="divide-y divide-gray-50"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Cuti Modal -->
+  <div id="cutiModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div><h3 class="font-headline text-lg font-bold text-on-surface" id="cutiModalTitle">Tambah Data Cuti</h3><p class="text-xs text-on-surface-variant">Atur jatah cuti karyawan</p></div>
+        <button onclick="closeCutiModal()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors"><span class="material-symbols-outlined text-gray-400">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Nama Karyawan</label><select id="cutiEmployee" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"><option value="">-- Pilih Karyawan --</option></select></div>
+        <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Jatah Cuti (hari)</label><input type="number" id="cutiTotalDays" min="0" max="30" value="12" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Contoh: 12"></div>
+        <button onclick="saveCuti()" class="w-full h-11 bg-primary hover:bg-blue-800 text-white font-headline text-sm rounded-xl shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2"><span class="material-symbols-outlined text-lg">save</span>Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch Cuti Modal -->
+  <div id="batchCutiModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div><h3 class="font-headline text-lg font-bold text-on-surface">Atur Cuti Semua Karyawan</h3><p class="text-xs text-on-surface-variant">Set jatah cuti untuk seluruh karyawan sekaligus</p></div>
+        <button onclick="closeBatchCutiModal()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors"><span class="material-symbols-outlined text-gray-400">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Jatah Cuti (hari)</label><input type="number" id="batchCutiDays" min="0" max="30" value="12" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Contoh: 12"></div>
+        <p class="text-xs text-on-surface-variant bg-amber-50 p-3 rounded-xl"><span class="material-symbols-outlined text-sm text-amber-600 align-middle">info</span>Ini akan mengatur jatah cuti untuk semua karyawan. Data yang sudah ada akan diupdate.</p>
+        <button onclick="doBatchCuti()" class="w-full h-11 bg-secondary hover:bg-green-700 text-white font-headline text-sm rounded-xl shadow-lg shadow-secondary/25 transition-all flex items-center justify-center gap-2"><span class="material-symbols-outlined text-lg">groups</span>Terapkan ke Semua</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deduct Cuti Modal -->
+  <div id="deductCutiModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div><h3 class="font-headline text-lg font-bold text-on-surface">Potong Cuti</h3><p class="text-xs text-on-surface-variant" id="deductCutiInfo">-</p></div>
+        <button onclick="closeDeductCutiModal()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors"><span class="material-symbols-outlined text-gray-400">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <input type="hidden" id="deductCutiName">
+        <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Jumlah Hari</label><input type="number" id="deductDays" min="1" max="30" value="1" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Bulan</label><select id="deductMonth" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"></select></div>
+          <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Tahun</label><select id="deductYear" class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"></select></div>
+        </div>
+        <div><label class="block text-sm font-semibold text-on-surface mb-1.5">Keterangan</label><input type="text" id="deductReason" placeholder="Contoh: Cuti sakit, cuti tahunan..." class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"></div>
+        <button onclick="doDeductCuti()" class="w-full h-11 bg-warning hover:bg-amber-600 text-white font-headline text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"><span class="material-symbols-outlined text-lg">remove_circle</span>Potong Cuti</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed top-6 right-6 bg-white shadow-xl rounded-xl p-4 z-50 flex items-center gap-3 max-w-sm border-l-4" style="border-left-color: #059669;">
+    <span class="material-symbols-outlined text-[22px]" id="toastIcon">check_circle</span><span class="text-sm" id="toastText"></span>
+  </div>
+
+  <script>
+    // ── State ──
+    let recapData = [];
+    let currentSort = { field: 'employee_name', order: 'asc' };
+    let selectedFile = null;
+    let availableMonths = [];
+    let appData = [];
+
+    const MONTH_NAMES = {
+      '01':'Januari','02':'Februari','03':'Maret','04':'April','05':'Mei','06':'Juni',
+      '07':'Juli','08':'Agustus','09':'September','10':'Oktober','11':'November','12':'Desember'
+    };
+
+    // ── Init ──
+    document.addEventListener('DOMContentLoaded', () => {
+      checkSession();
+      loadMonths();
+      loadStats();
+      loadRecap();
+      setupDropZone();
+      initDeductMonth();
+      // Initialize notification count on load (don't show toast on first load)
+      fetch('/api/notifications/unread-count').then(r => r.json()).then(d => {
+        if(d.success) { lastNotifCount = d.count; updateNotifBadge(d.count); }
+      }).catch(() => {});
+    });
+
+    // ── Auth ──
+    function checkSession() {
+      fetch('/api/auth/session').then(r => r.json()).then(d => {
+        if (!d.authenticated) { window.location.href = '/login.html'; return; }
+        if (d.user) {
+          document.querySelector('[data-user-name]').textContent = d.user.full_name;
+          document.getElementById('syncStatus').textContent = 'Sync: ' + new Date().toLocaleTimeString('id-ID');
+        }
+      });
+    }
+    function logout() { if(confirm('Yakin ingin keluar?')) fetch('/api/auth/logout',{method:'POST'}).then(()=>{window.location.href='/login.html';}); }
+
+    // ── User Menu ──
+    function toggleUserMenu() { document.getElementById('userMenu').classList.toggle('hidden'); }
+    document.addEventListener('click', function(e) {
+      var menu = document.getElementById('userMenu');
+      if (!menu.classList.contains('hidden') && !e.target.closest('[onclick="toggleUserMenu()"]') && !e.target.closest('#userMenu')) menu.classList.add('hidden');
+    });
+
+    // ── Change Password ──
+    function showChangePasswordModal() { document.getElementById('userMenu').classList.add('hidden'); document.getElementById('changePasswordModal').classList.remove('hidden'); document.getElementById('oldPassword').value=''; document.getElementById('newPassword').value=''; document.getElementById('confirmPassword').value=''; }
+    function closeChangePasswordModal() { document.getElementById('changePasswordModal').classList.add('hidden'); }
+    async function doChangePassword() {
+      var oldPass=document.getElementById('oldPassword').value, newPass=document.getElementById('newPassword').value, confirmPass=document.getElementById('confirmPassword').value;
+      if(!oldPass||!newPass){showToast('Semua field wajib diisi','error');return;}
+      if(newPass!==confirmPass){showToast('Password baru tidak cocok','error');return;}
+      if(newPass.length<4){showToast('Password baru minimal 4 karakter','error');return;}
+      try {
+        var res=await fetch('/api/auth/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({oldPassword:oldPass,newPassword:newPass})});
+        var d=await res.json();
+        if(d.success){showToast('Password berhasil diubah!','success');closeChangePasswordModal();}else{showToast(d.error||'Gagal mengubah password','error');}
+      } catch(e){showToast('Terjadi kesalahan','error');}
+    }
+
+    // ── Notification Panel ──
+    async function loadNotifications() {
+      try {
+        var res=await fetch('/api/admin/notifications');
+        var d=await res.json();
+        if(!d.success)return;
+        var list=document.getElementById('notifList');
+        var unread=0;
+        if(d.data.length){
+          list.innerHTML=d.data.map(function(n){
+            if(!n.is_read)unread++;
+            var iconClass=n.type==='info'?'info':n.type==='success'?'success':n.type==='warning'?'warning':'error';
+            var iconSymbol=n.type==='info'?'info':n.type==='success'?'check_circle':n.type==='warning'?'warning':'error';
+            return '<div class="notification-item'+(n.is_read?'':' unread')+'"><div class="flex items-start gap-3"><div class="notif-icon '+iconClass+'"><span class="material-symbols-outlined" style="font-size:18px;">'+iconSymbol+'</span></div><div class="flex-1 min-w-0"><p class="text-sm font-semibold text-on-surface">'+n.title+'</p><p class="text-xs text-on-surface-variant mt-0.5">'+n.message+'</p><p class="text-[10px] text-on-surface-variant mt-1">'+new Date(n.created_at).toLocaleString('id-ID')+'</p></div></div></div>';
+          }).join('');
+        } else { list.innerHTML='<p class="px-4 py-3 text-xs text-on-surface-variant text-center">Tidak ada notifikasi</p>'; }
+        updateNotifBadge(unread);
+      } catch(e){console.error('Load notifications error:',e);}
+    }
+    function updateNotifBadge(count){
+      var badge=document.getElementById('notifBadge');
+      if(count>0){badge.textContent=count>9?'9+':count;badge.classList.remove('hidden');badge.classList.add('flex');}
+      else{badge.classList.add('hidden');badge.classList.remove('flex');}
+    }
+
+    // ── Auto Notification Polling ──
+    var lastNotifCount = 0;
+
+    async function checkNewNotifications() {
+      try {
+        var res = await fetch('/api/notifications/unread-count');
+        var d = await res.json();
+        if (d.success) {
+          var newCount = d.count;
+          updateNotifBadge(newCount);
+
+          // Jika ada notifikasi baru (count naik), tampilkan toast
+          if (newCount > lastNotifCount && lastNotifCount >= 0) {
+            var diff = newCount - lastNotifCount;
+            showToast('Anda memiliki ' + diff + ' notifikasi baru', 'success');
+
+            // Auto-load notifikasi terbaru
+            loadNotifications();
+
+            // Tampilkan panel notifikasi otomatis selama 5 detik
+            var panel = document.getElementById('notificationPanel');
+            if (panel.classList.contains('hidden')) {
+              panel.classList.remove('hidden');
+              setTimeout(function() { panel.classList.add('hidden'); }, 5000);
+            }
+          }
+          lastNotifCount = newCount;
+        }
+      } catch(e) { /* ignore error */ }
+    }
+
+    // Mulai polling setiap 15 detik
+    setInterval(checkNewNotifications, 15000);
+
+    function toggleNotificationPanel(){
+      var panel = document.getElementById('notificationPanel');
+      panel.classList.toggle('hidden');
+      loadNotifications();
+    }
+    function markAllNotificationsRead(){fetch('/api/admin/notifications/read',{method:'POST'}).then(function(){loadNotifications();});}
+    document.addEventListener('click',function(e){var panel=document.getElementById('notificationPanel');if(!panel.classList.contains('hidden')&&!e.target.closest('#notificationPanel')&&!e.target.closest('[onclick="toggleNotificationPanel()"]'))panel.classList.add('hidden');});
+
+    // ── Month Management ──
+    async function loadMonths(){
+      try{const res=await fetch('/api/admin/months');const d=await res.json();availableMonths=d.data||[];
+        var filterSel=document.getElementById('monthFilter');filterSel.innerHTML='<option value="">Semua Bulan</option>';
+        availableMonths.forEach(function(m){var parts=m.split('-');var opt=document.createElement('option');opt.value=m;opt.textContent=(MONTH_NAMES[parts[1]]||parts[1])+' '+parts[0];filterSel.appendChild(opt);});
+        var uploadSel=document.getElementById('uploadMonth');uploadSel.innerHTML='<option value="">-- Bulan --</option>';
+        var monthNames=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        monthNames.forEach(function(name,i){var mo=String(i+1).padStart(2,'0');var opt=document.createElement('option');opt.value=mo;opt.textContent=name;uploadSel.appendChild(opt);});
+        var uploadYear=document.getElementById('uploadYear');uploadYear.innerHTML='<option value="">-- Tahun --</option>';
+        for(var y=2024;y<=2030;y++){var opt=document.createElement('option');opt.value=y;opt.textContent=y;uploadYear.appendChild(opt);}
+      }catch(e){console.error('Load months error:',e);}
+    }
+    function onMonthChange(){loadStats();loadRecap();}
+    function getSelectedMonth(){return document.getElementById('monthFilter').value;}
+
+    // ── Tabs ──
+    function showTab(tab){
+      ['recap','detail','cuti','pengajuan','pengumuman','import'].forEach(function(t){
+        document.getElementById('tab-'+t).classList.toggle('hidden',t!==tab);
+        var btn=document.querySelector('[data-tab="'+t+'"]');
+        if(btn)btn.classList.toggle('active',t===tab);
+      });
+      if(tab==='detail'){loadEmployeeList();loadDetail();}
+      if(tab==='cuti'){loadLeaveBalance();loadLeaveHistory();loadCutiEmployeeList();}
+      if(tab==='pengajuan')loadApplications();
+      if(tab==='pengumuman')loadAnnouncements();
+      if(tab==='import')loadImportHistory();
+    }
+
+    // ── Stats ──
+    async function loadStats(){
+      try{var month=getSelectedMonth();var url='/api/admin/stats';if(month)url+='?month='+month;
+        var res=await fetch(url);var d=await res.json();if(!d.success)return;
+        document.getElementById('statTotalKaryawan').textContent=d.totalEmployees;
+        document.getElementById('statTotalKaryawanSub').textContent=d.totalDays+' hari tercatat';
+        document.getElementById('statOnTime').textContent=d.totalOnTime;
+        document.getElementById('statOnTimeSub').textContent=d.attendanceRate+'% dari total';
+        document.getElementById('statLate').textContent=d.totalLateToleransi+d.totalLatePotongan;
+        document.getElementById('statLateSub').textContent=d.totalLateMinutes+' menit total';
+        document.getElementById('statDays').textContent=d.totalDays;
+        document.getElementById('statDaysSub').textContent=d.totalLatePotongan+' hari telat potongan';
+      }catch(e){console.error('Stats error:',e);}
+    }
+
+    // ── Recap Table ──
+    async function loadRecap(){
+      try{var month=getSelectedMonth();var url='/api/admin/recap';if(month)url+='?month='+month;
+        var res=await fetch(url);var d=await res.json();if(d.success){recapData=d.data;renderRecap(recapData);}
+      }catch(e){console.error('Recap error:',e);}
+    }
+    function renderRecap(data){
+      var tbody=document.getElementById('recapBody');
+      if(!data.length){tbody.innerHTML='<tr><td colspan="9" class="px-5 py-10 text-center text-sm text-on-surface-variant">Tidak ada data</td></tr>';return;}
+      tbody.innerHTML=data.map(function(r,i){
+        var pct=r.days_recorded>0?Math.round((r.days_on_time/r.days_recorded)*100):0;
+        var statusBadge=pct>=90?'<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>A+</span>':pct>=70?'<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>B</span>':'<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-[10px] font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>C</span>';
+        return '<tr class="hover:bg-gray-50/50 transition-colors"><td class="px-5 py-3 text-xs text-on-surface-variant">'+(i+1)+'</td><td class="px-5 py-3 font-semibold text-on-surface">'+r.employee_name+'</td><td class="px-5 py-3 text-center">'+r.days_recorded+'</td><td class="px-5 py-3 text-center font-semibold text-secondary">'+r.days_on_time+'</td><td class="px-5 py-3 text-center">'+(r.days_late_toleransi>0?'<span class="text-amber-600">'+r.days_late_toleransi+'</span>':'<span class="text-gray-300">0</span>')+'</td><td class="px-5 py-3 text-center">'+(r.days_late_potongan>0?'<span class="text-error font-semibold">'+r.days_late_potongan+'</span>':'<span class="text-gray-300">0</span>')+'</td><td class="px-5 py-3 text-center">'+(r.days_early_leave>0?'<span class="text-amber-600">'+r.days_early_leave+'</span>':'<span class="text-gray-300">0</span>')+'</td><td class="px-5 py-3 text-center text-xs text-on-surface-variant">'+r.total_late_minutes+' mnt</td><td class="px-5 py-3 text-center"><div class="flex items-center justify-center gap-1">'+statusBadge+'<button onclick="showDetailModal(\''+r.employee_name+'\')" class="p-1.5 rounded-lg hover:bg-primary-light transition-colors ml-1" title="Lihat Detail"><span class="material-symbols-outlined text-primary text-base">visibility</span></button></div></td></tr>';
+      }).join('');
+    }
+    function searchRecapTable(){var q=document.getElementById('searchRecap').value.toLowerCase();var filtered=recapData.filter(function(r){return r.employee_name.toLowerCase().includes(q);});renderRecap(filtered);}
+    function sortRecap(field){
+      if(currentSort.field===field){currentSort.order=currentSort.order==='asc'?'desc':'asc';}else{currentSort={field,order:'asc'};}
+      recapData.sort(function(a,b){var va=a[field],vb=b[field];if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase();}if(va<vb)return currentSort.order==='asc'?-1:1;if(va>vb)return currentSort.order==='asc'?1:-1;return 0;});
+      document.querySelectorAll('[id^="sortIcon-"]').forEach(function(el){el.textContent='↕';});
+      var icon=document.getElementById('sortIcon-'+field);if(icon)icon.textContent=currentSort.order==='asc'?'↑':'↓';
+      renderRecap(recapData);
+    }
+
+    // ── Detail Modal ──
+    async function showDetailModal(name){
+      document.getElementById('modalTitle').textContent='Detail Presensi: '+name;
+      document.getElementById('detailModal').classList.remove('hidden');
+      try{var month=getSelectedMonth();var url='/api/admin/detail?employee='+encodeURIComponent(name);if(month)url+='&month='+month;
+        var res=await fetch(url);var d=await res.json();var tbody=document.getElementById('modalBody');
+        if(!d.data.length){tbody.innerHTML='<tr><td colspan="7" class="px-5 py-10 text-center text-sm text-on-surface-variant">Tidak ada data</td></tr>';return;}
+        tbody.innerHTML=d.data.map(function(r){
+          var statusClass=r.status?.includes('Tepat Waktu')?'text-secondary':r.status?.includes('Telat')?'text-amber-600':r.status?.includes('Tidak Ada')?'text-error':'text-on-surface-variant';
+          return '<tr class="hover:bg-gray-50/50"><td class="px-5 py-2.5 text-on-surface">Tgl '+r.day_number+'</td><td class="px-5 py-2.5 text-on-surface-variant">'+(r.day_name||'-')+'</td><td class="px-5 py-2.5 text-center font-mono text-xs '+(r.check_in?'text-on-surface':'text-gray-300')+'">'+(r.check_in||'-')+'</td><td class="px-5 py-2.5 text-center font-mono text-xs '+(r.check_out?'text-on-surface':'text-gray-300')+'">'+(r.check_out||'-')+'</td><td class="px-5 py-2.5 text-xs text-on-surface-variant">'+(r.shift_detected||'-')+'</td><td class="px-5 py-2.5 text-center '+(r.late_minutes>0?'text-amber-600 font-semibold':'text-gray-300')+'">'+(r.late_minutes>0?r.late_minutes+' mnt':'-')+'</td><td class="px-5 py-2.5 '+statusClass+' text-xs">'+(r.status||'-')+'</td></tr>';
+        }).join('');
+      }catch(e){console.error('Detail modal error:',e);}
+    }
+    function closeModal(){document.getElementById('detailModal').classList.add('hidden');}
+    document.getElementById('detailModal').addEventListener('click',function(e){if(e.target===document.getElementById('detailModal'))closeModal();});
+
+    // ── Detail Tab ──
+    async function loadEmployeeList(){
+      try{var res=await fetch('/api/admin/employees-list');var d=await res.json();var select=document.getElementById('filterEmployee');if(select.options.length<=1){d.data.forEach(function(name){var opt=document.createElement('option');opt.value=name;opt.textContent=name;select.appendChild(opt);});}}catch(e){console.error('Employee list error:',e);}
+    }
+    async function loadDetail(){
+      var emp=document.getElementById('filterEmployee').value;var day=document.getElementById('filterDay').value;var month=getSelectedMonth();var url='/api/admin/detail?';
+      if(month)url+='month='+month+'&';if(emp)url+='employee='+encodeURIComponent(emp)+'&';if(day)url+='day='+day;
+      try{var res=await fetch(url);var d=await res.json();var tbody=document.getElementById('detailBody');
+        if(!d.data.length){tbody.innerHTML='<tr><td colspan="9" class="px-5 py-10 text-center text-sm text-on-surface-variant">Tidak ada data</td></tr>';return;}
+        tbody.innerHTML=d.data.slice(0,200).map(function(r,i){
+          var statusClass=r.status?.includes('Tepat Waktu')?'text-secondary':r.status?.includes('Telat')?'text-amber-600':r.status?.includes('Tidak Ada')?'text-error':'text-on-surface-variant';
+          return '<tr class="hover:bg-gray-50/50"><td class="px-5 py-2.5 text-xs text-on-surface-variant">'+(i+1)+'</td><td class="px-5 py-2.5 font-medium text-on-surface">'+r.employee_name+'</td><td class="px-5 py-2.5 text-center">Tgl '+r.day_number+'</td><td class="px-5 py-2.5 text-on-surface-variant">'+(r.day_name||'-')+'</td><td class="px-5 py-2.5 text-center font-mono text-xs">'+(r.check_in||'-')+'</td><td class="px-5 py-2.5 text-center font-mono text-xs">'+(r.check_out||'-')+'</td><td class="px-5 py-2.5 text-xs text-on-surface-variant">'+(r.shift_detected||'-')+'</td><td class="px-5 py-2.5 text-center '+(r.late_minutes>0?'text-amber-600 font-semibold':'text-gray-300')+'">'+(r.late_minutes>0?r.late_minutes+' mnt':'-')+'</td><td class="px-5 py-2.5 '+statusClass+' text-xs">'+(r.status||'-')+'</td></tr>';
+        }).join('');
+      }catch(e){console.error('Detail load error:',e);}
+    }
+
+    // ── Cuti Management ──
+    let cutiData=[];
+    async function loadCutiEmployeeList(){
+      try{var res=await fetch('/api/admin/employees-list');var d=await res.json();var sel=document.getElementById('cutiEmployee');var histSel=document.getElementById('cutiHistoryFilter');
+        if(sel&&sel.options.length<=1){d.data.forEach(function(name){var opt=document.createElement('option');opt.value=name;opt.textContent=name;sel.appendChild(opt);});}
+        if(histSel&&histSel.options.length<=1){d.data.forEach(function(name){var opt=document.createElement('option');opt.value=name;opt.textContent=name;histSel.appendChild(opt);});}
+      }catch(e){console.error('Load employee list error:',e);}
+    }
+    async function loadLeaveBalance(){
+      try{var res=await fetch('/api/admin/leave-balance');var d=await res.json();if(d.success){cutiData=d.data;renderCutiTable(cutiData);}}catch(e){console.error('Load leave balance error:',e);}
+    }
+    function renderCutiTable(data){
+      var tbody=document.getElementById('cutiBody');
+      if(!data.length){tbody.innerHTML='<tr><td colspan="6" class="px-5 py-10 text-center text-sm text-on-surface-variant">Belum ada data cuti. Klik "Atur Semua" untuk mengatur jatah cuti karyawan.</td></tr>';return;}
+      tbody.innerHTML=data.map(function(r,i){
+        var sisa=r.total_days-r.used_days;var pct=r.total_days>0?Math.round((r.used_days/r.total_days)*100):0;
+        var sisaColor=sisa<=2?'text-error font-bold':sisa<=5?'text-warning font-semibold':'text-secondary font-bold';
+        var barColor=pct>=80?'bg-red-500':pct>=50?'bg-amber-500':'bg-emerald-500';
+        return '<tr class="hover:bg-gray-50/50 transition-colors"><td class="px-5 py-3 text-xs text-on-surface-variant">'+(i+1)+'</td><td class="px-5 py-3 font-semibold text-on-surface">'+r.employee_name+'</td><td class="px-5 py-3 text-center font-semibold">'+r.total_days+' hari</td><td class="px-5 py-3 text-center">'+r.used_days+' hari<div class="w-full bg-gray-200 rounded-full h-1.5 mt-1"><div class="'+barColor+' h-1.5 rounded-full" style="width:'+pct+'%"></div></div></td><td class="px-5 py-3 text-center '+sisaColor+'">'+sisa+' hari</td><td class="px-5 py-3 text-center"><div class="flex items-center justify-center gap-1"><button onclick="showDeductCutiModal(\''+r.employee_name+'\','+sisa+')" class="p-1.5 rounded-lg hover:bg-amber-50 transition-colors" title="Potong Cuti"><span class="material-symbols-outlined text-warning text-base">remove_circle</span></button><button onclick="editCuti('+r.id+')" class="p-1.5 rounded-lg hover:bg-primary-light transition-colors" title="Edit"><span class="material-symbols-outlined text-primary text-base">edit</span></button><button onclick="deleteCuti('+r.id+')" class="p-1.5 rounded-lg hover:bg-red-50 transition-colors" title="Hapus"><span class="material-symbols-outlined text-error text-base">delete</span></button></div></td></tr>';
+      }).join('');
+    }
+    function searchCutiTable(){var q=document.getElementById('searchCuti').value.toLowerCase();var filtered=cutiData.filter(function(r){return r.employee_name.toLowerCase().includes(q);});renderCutiTable(filtered);}
+    function showAddCutiModal(){document.getElementById('cutiModalTitle').textContent='Tambah Data Cuti';document.getElementById('cutiEmployee').disabled=false;document.getElementById('cutiEmployee').value='';document.getElementById('cutiTotalDays').value='12';document.getElementById('cutiModal').classList.remove('hidden');}
+    function editCuti(id){var item=cutiData.find(function(r){return r.id===id;});if(!item)return;document.getElementById('cutiModalTitle').textContent='Edit Data Cuti';document.getElementById('cutiEmployee').value=item.employee_name;document.getElementById('cutiEmployee').disabled=true;document.getElementById('cutiTotalDays').value=item.total_days;document.getElementById('cutiModal').classList.remove('hidden');}
+    function closeCutiModal(){document.getElementById('cutiModal').classList.add('hidden');}
+    async function saveCuti(){var name=document.getElementById('cutiEmployee').value;var days=document.getElementById('cutiTotalDays').value;if(!name){showToast('Pilih karyawan','error');return;}
+      try{var res=await fetch('/api/admin/leave-balance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_name:name,total_days:parseInt(days)})});var d=await res.json();if(d.success){showToast(d.message,'success');closeCutiModal();loadLeaveBalance();}else{showToast(d.error||'Gagal menyimpan','error');}}catch(e){console.error('saveCuti error:',e);showToast('Terjadi kesalahan: '+e.message,'error');}}
+    async function deleteCuti(id){if(!confirm('Yakin ingin menghapus data cuti ini?'))return;try{var res=await fetch('/api/admin/leave-balance?id='+id,{method:'DELETE'});var d=await res.json();if(d.success){showToast('Data cuti dihapus','success');loadLeaveBalance();}else{showToast(d.error||'Gagal menghapus','error');}}catch(e){console.error('deleteCuti error:',e);showToast('Terjadi kesalahan: '+e.message,'error');}}
+    function showBatchCutiModal(){document.getElementById('batchCutiModal').classList.remove('hidden');}
+    function closeBatchCutiModal(){document.getElementById('batchCutiModal').classList.add('hidden');}
+    async function doBatchCuti(){var days=document.getElementById('batchCutiDays').value;if(!confirm('Atur jatah cuti '+days+' hari untuk SEMUA karyawan?'))return;try{var res=await fetch('/api/admin/leave-balance/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({total_days:parseInt(days)})});var d=await res.json();if(d.success){showToast(d.message,'success');closeBatchCutiModal();loadLeaveBalance();}else{showToast(d.error||'Gagal','error');}}catch(e){console.error('doBatchCuti error:',e);showToast('Terjadi kesalahan: '+e.message,'error');}}
+    function initDeductMonth(){var monthSel=document.getElementById('deductMonth');var yearSel=document.getElementById('deductYear');var now=new Date();var months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];monthSel.innerHTML='';for(var m=0;m<12;m++){var opt=document.createElement('option');opt.value=String(m+1).padStart(2,'0');opt.textContent=months[m];if(m===now.getMonth())opt.selected=true;monthSel.appendChild(opt);}yearSel.innerHTML='';for(var y=2030;y>=2024;y--){var yopt=document.createElement('option');yopt.value=y;yopt.textContent=y;if(y===now.getFullYear())yopt.selected=true;yearSel.appendChild(yopt);}}
+    function showDeductCutiModal(name,sisa){document.getElementById('deductCutiName').value=name;document.getElementById('deductCutiInfo').textContent=name+' | Sisa: '+sisa+' hari';document.getElementById('deductDays').value='1';document.getElementById('deductDays').max=sisa;document.getElementById('deductReason').value='';var now=new Date();document.getElementById('deductMonth').value=String(now.getMonth()+1).padStart(2,'0');document.getElementById('deductYear').value=now.getFullYear();document.getElementById('deductCutiModal').classList.remove('hidden');}
+    function closeDeductCutiModal(){document.getElementById('deductCutiModal').classList.add('hidden');}
+    async function doDeductCuti(){var name=document.getElementById('deductCutiName').value;var days=document.getElementById('deductDays').value;var month=document.getElementById('deductMonth').value;var year=document.getElementById('deductYear').value;var reason=document.getElementById('deductReason').value;if(!days||parseInt(days)<1){showToast('Masukkan jumlah hari','error');return;}if(!month||!year){showToast('Pilih bulan dan tahun','error');return;}
+      try{var res=await fetch('/api/admin/leave-balance/deduct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_name:name,days:parseInt(days),month,year:parseInt(year),reason})});var d=await res.json();if(d.success){showToast(d.message,'success');closeDeductCutiModal();loadLeaveBalance();loadLeaveHistory();}else{showToast(d.error||'Gagal','error');}}catch(e){console.error('doDeductCuti error:',e);showToast('Terjadi kesalahan: '+e.message,'error');}}
+    async function deleteLeaveHistory(id){if(!confirm('Yakin ingin menghapus riwayat ini?'))return;try{var res=await fetch('/api/admin/leave-history?id='+id,{method:'DELETE'});var d=await res.json();if(d.success){showToast('Riwayat dihapus','success');loadLeaveHistory();loadLeaveBalance();}else{showToast(d.error||'Gagal','error');}}catch(e){console.error('deleteLeaveHistory error:',e);showToast('Terjadi kesalahan: '+e.message,'error');}}
+    async function loadLeaveHistory(){try{var emp=document.getElementById('cutiHistoryFilter').value;var url='/api/admin/leave-history';if(emp)url+='?employee_name='+encodeURIComponent(emp);
+      var res=await fetch(url);var d=await res.json();var tbody=document.getElementById('cutiHistoryBody');
+      if(!d.data||!d.data.length){tbody.innerHTML='<tr><td colspan="6" class="px-5 py-10 text-center text-sm text-on-surface-variant">Belum ada riwayat penggunaan cuti</td></tr>';return;}
+      tbody.innerHTML=d.data.map(function(r,i){return '<tr class="hover:bg-gray-50/50"><td class="px-5 py-2.5 text-xs text-on-surface-variant">'+(i+1)+'</td><td class="px-5 py-2.5 font-semibold text-on-surface">'+r.employee_name+'</td><td class="px-5 py-2.5 text-center text-error font-semibold">'+r.days_used+' hari</td><td class="px-5 py-2.5 text-on-surface-variant">'+(r.reason||'-')+'</td><td class="px-5 py-2.5 text-xs text-on-surface-variant">'+(r.used_at?new Date(r.used_at).toLocaleDateString('id-ID',{month:'long',year:'numeric'}):'-')+'</td><td class="px-5 py-2.5 text-center"><button onclick="deleteLeaveHistory('+r.id+')" class="p-1 rounded hover:bg-red-50 text-error" title="Hapus riwayat"><span class="material-symbols-outlined text-sm">delete</span></button></td></tr>';}).join('');
+    }catch(e){console.error('Load leave history error:',e);}
+    }
+
+    // ── Pengajuan (Applications) ──
+    async function loadApplications(){
+      try{
+        var status=document.getElementById('filterAppStatus').value;var employee=document.getElementById('filterAppEmployee').value;
+        var url='/api/admin/applications?status='+encodeURIComponent(status);
+        if(employee)url+='&employee='+encodeURIComponent(employee);
+        var res=await fetch(url);var d=await res.json();
+        if(!d.success)return;
+        appData=d.data;
+        var tbody=document.getElementById('appTableBody');
+        if(!d.data.length){tbody.innerHTML='<tr><td colspan="8" class="px-5 py-10 text-center text-sm text-on-surface-variant">Tidak ada pengajuan</td></tr>';return;}
+        tbody.innerHTML=d.data.map(function(r,i){
+          var typeClass=r.application_type==='izin'?'izin':r.application_type==='cuti'?'cuti':'sakit';
+          var typeLabel=r.application_type.charAt(0).toUpperCase()+r.application_type.slice(1);
+          var statusClass=r.status;var statusLabel=r.status==='pending'?'Menunggu':r.status==='approved'?'Disetujui':'Ditolak';
+          var statusIcon=r.status==='pending'?'schedule':r.status==='approved'?'check_circle':'cancel';
+          var fullName = r.employee_full_name || r.employee_name || '-';
+          var screenshotBtn = r.screenshot_path ? '<button onclick="viewScreenshot('+r.id+')" class="text-primary hover:underline text-xs" aria-label="Lihat screenshot"><span class="material-symbols-outlined text-base">cloud</span>Lihat</button>' : '<span class="text-gray-300 text-xs">-</span>';
+          var actionBtn = r.status==='pending' ? '<button onclick="approveApp('+r.id+')" class="px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-200 transition-colors" aria-label="Setujui pengajuan">Setujui</button><button onclick="rejectApp('+r.id+')" class="px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-200 transition-colors ml-1" aria-label="Tolak pengajuan">Tolak</button>' : '';
+          actionBtn += '<button onclick="deleteApp('+r.id+')" class="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-colors ml-1" aria-label="Hapus pengajuan"><span class="material-symbols-outlined" style="font-size:12px;">delete</span></button>';
+          return '<tr class="hover:bg-gray-50/50 transition-colors"><td class="px-5 py-3 text-xs text-on-surface-variant">'+(i+1)+'</td><td class="px-5 py-3 font-medium text-on-surface">'+fullName+'</td><td class="px-5 py-3"><span class="app-badge '+typeClass+'">'+typeLabel+'</span></td><td class="px-5 py-3 text-xs text-on-surface-variant">'+r.start_date+' s/d '+r.end_date+'</td><td class="px-5 py-3 text-xs text-on-surface-variant max-w-[200px] truncate">'+r.reason+'</td><td class="px-5 py-3 text-center">'+screenshotBtn+'</td><td class="px-5 py-3 text-center"><span class="app-status '+statusClass+'"><span class="material-symbols-outlined" style="font-size:12px;">'+statusIcon+'</span> '+statusLabel+'</span></td><td class="px-5 py-3 text-center">'+actionBtn+'</td></tr>';
+        }).join('');
+      }catch(e){console.error('Load applications error:',e);}
+    }
+    function loadAppEmployeeList(){
+      fetch('/api/admin/employees-list').then(function(r){return r.json();}).then(function(d){
+        var sel=document.getElementById('filterAppEmployee');if(sel.options.length<=1){d.data.forEach(function(name){var opt=document.createElement('option');opt.value=name;opt.textContent=name;sel.appendChild(opt);});}
+      }).catch(function(){});
+    }
+    async function approveApp(id){
+      if(!confirm('Setujui pengajuan ini?'))return;
+      try{var res=await fetch('/api/admin/applications/'+id+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved',admin_note:'Disetujui oleh admin'})});var d=await res.json();if(d.success){showToast('Pengajuan disetujui','success');loadApplications();}else{showToast(d.error||'Gagal','error');}}catch(e){showToast('Terjadi kesalahan','error');}}
+    async function rejectApp(id){
+      var note=prompt('Tulis alasan penolakan:');if(!note)return;
+      try{var res=await fetch('/api/admin/applications/'+id+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'rejected',admin_note:note})});var d=await res.json();if(d.success){showToast('Pengajuan ditolak','success');loadApplications();}else{showToast(d.error||'Gagal','error');}}catch(e){showToast('Terjadi kesalahan','error');}}
+    async function viewScreenshot(id){
+      try{var res=await fetch('/api/admin/applications/'+id+'/screenshot');if(res.ok){window.open('/api/admin/applications/'+id+'/screenshot','_blank');}else{showToast('Screenshot tidak tersedia','error');}}catch(e){showToast('Terjadi kesalahan','error');}
+    }
+    async function deleteApp(id){
+      if(!confirm('Hapus pengajuan ini?'))return;
+      try{var res=await fetch('/api/admin/applications/'+id,{method:'DELETE'});var d=await res.json();if(d.success){showToast('Pengajuan dihapus','success');loadApplications();}else{showToast(d.error||'Gagal','error');}}catch(e){showToast('Terjadi kesalahan','error');}
+    }
+
+    // ── Pengumuman (Announcements) ──
+    async function loadAnnouncements(){
+      try{var res=await fetch('/api/karyawan/announcements');var d=await res.json();
+        var container=document.getElementById('announcementListAdmin');
+        if(!d.success||!d.data.length){container.innerHTML='<p class="text-sm text-on-surface-variant text-center py-8">Belum ada pengumuman.</p>';return;}
+        container.innerHTML=d.data.map(function(a){return '<div class="announcement-card"><div class="flex items-center justify-between mb-2"><h4 class="font-semibold text-on-surface">'+a.title+'</h4><div class="flex items-center gap-2"><span class="announcement-date">'+new Date(a.created_at).toLocaleDateString('id-ID')+'</span><button onclick="deleteAnnouncement('+a.id+')" class="p-1 text-gray-400 hover:text-red-500 transition-colors" title="Hapus pengumuman"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button></div></div><p class="text-sm text-on-surface-variant">'+a.content+'</p><p class="text-xs text-on-surface-variant mt-2">Dibuat oleh: '+a.created_by+'</p></div>';}).join('');
+      }catch(e){console.error('Load announcements error:',e);}
+    }
+    function showAnnouncementModal(){document.getElementById('announcementModal').classList.remove('hidden');document.getElementById('annTitle').value='';document.getElementById('annContent').value='';}
+    function closeAnnouncementModal(){document.getElementById('announcementModal').classList.add('hidden');}
+    async function saveAnnouncement(){
+      var title=document.getElementById('annTitle').value;var content=document.getElementById('annContent').value;
+      if(!title||!content){showToast('Judul dan konten wajib diisi','error');return;}
+      try{var res=await fetch('/api/admin/announcements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title,content:content})});var d=await res.json();if(d.success){showToast('Pengumuman berhasil dikirim!','success');closeAnnouncementModal();loadAnnouncements();}else{showToast(d.error||'Gagal','error');}}catch(e){showToast('Terjadi kesalahan','error');}}
+    async function deleteAnnouncement(id){
+      if(!confirm('Hapus pengumuman ini?'))return;
+      try{var res=await fetch('/api/admin/announcements/'+id,{method:'DELETE'});var d=await res.json();if(d.success){showToast('Pengumuman dihapus','success');loadAnnouncements();}else{showToast(d.error||'Gagal','error');}}catch(e){showToast('Terjadi kesalahan','error');}
+    }
+
+    // ── Import History ──
+    async function loadImportHistory(){
+      try{var month=getSelectedMonth();var url='/api/admin/stats';if(month)url+='?month='+month;
+        var res=await fetch(url);var d=await res.json();var container=document.getElementById('importHistory');
+        if(d.importHistory&&d.importHistory.length>0){
+          container.innerHTML=d.importHistory.map(function(h){var parts=(h.month||'').split('-');var monthLabel=(MONTH_NAMES[parts[1]]||parts[1])+' '+parts[0];
+            return '<div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100"><div class="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-primary text-xl">description</span></div><div class="flex-1 min-w-0"><p class="font-semibold text-on-surface text-sm">'+h.filename+'</p><p class="text-xs text-on-surface-variant mt-0.5">Bulan: <strong>'+monthLabel+'</strong> &bull; Diimport: '+(h.imported_at||'-')+' &bull; '+h.total_employees+' karyawan &bull; '+h.total_records+' records</p></div><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold shrink-0"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Selesai</span><button onclick="deleteMonthData(\''+h.month+'\')" class="p-2 rounded-lg hover:bg-red-50 transition-colors shrink-0" title="Hapus data bulan ini"><span class="material-symbols-outlined text-gray-400 hover:text-error text-lg">delete</span></button></div>';
+          }).join('');
+        }else{container.innerHTML='<p class="text-sm text-on-surface-variant text-center py-8">Belum ada data yang di-import</p>';}
+      }catch(e){console.error('Import history error:',e);}
+    }
+
+    // ── Upload Modal ──
+    function showUploadModal(){document.getElementById('uploadModal').classList.remove('hidden');clearFile();}
+    function closeUploadModal(){document.getElementById('uploadModal').classList.add('hidden');clearFile();}
+    function setupDropZone(){var dz=document.getElementById('dropZone');dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('dragover');});dz.addEventListener('dragleave',function(){dz.classList.remove('dragover');});dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('dragover');if(e.dataTransfer.files.length)handleFile(e.dataTransfer.files[0]);});}
+    function onFileSelect(input){if(input.files.length)handleFile(input.files[0]);}
+    function handleFile(file){var ext=file.name.split('.').pop().toLowerCase();if(!['xlsx','xls'].includes(ext)){showToast('Hanya file Excel (.xlsx/.xls) yang diperbolehkan','error');return;}selectedFile=file;document.getElementById('selectedFile').classList.remove('hidden');document.getElementById('selectedFileName').textContent=file.name;document.getElementById('selectedFileSize').textContent=(file.size/1024).toFixed(1)+' KB';document.getElementById('dropLabel').textContent='File siap diupload';document.getElementById('uploadBtn').disabled=false;}
+    function clearFile(){selectedFile=null;document.getElementById('fileInput').value='';document.getElementById('selectedFile').classList.add('hidden');document.getElementById('dropLabel').textContent='Klik atau seret file Excel ke sini';document.getElementById('uploadBtn').disabled=true;document.getElementById('uploadProgress').classList.add('hidden');document.getElementById('uploadMonth').value='';document.getElementById('uploadYear').value='';}
+    async function doUpload(){if(!selectedFile)return;var mo=document.getElementById('uploadMonth').value;var yr=document.getElementById('uploadYear').value;if(!mo||!yr){showToast('Pilih bulan dan tahun terlebih dahulu!','error');return;}var month=yr+'-'+mo;var btn=document.getElementById('uploadBtn');var progress=document.getElementById('uploadProgress');btn.disabled=true;progress.classList.remove('hidden');
+      try{var formData=new FormData();formData.append('file',selectedFile);formData.append('month',month);var res=await fetch('/api/admin/upload',{method:'POST',body:formData});var d=await res.json();if(d.success){showToast('Berhasil! '+d.employees+' karyawan, '+d.records+' record diimport untuk '+(MONTH_NAMES[mo]||mo)+' '+yr,'success');closeUploadModal();loadMonths();loadStats();loadRecap();}else{showToast(d.error||'Gagal import','error');btn.disabled=false;progress.classList.add('hidden');}}catch(e){showToast('Gagal upload: '+e.message,'error');btn.disabled=false;progress.classList.add('hidden');}}
+
+    // ── Toast ──
+    function showToast(msg,type){var t=document.getElementById('toast');var icon=document.getElementById('toastIcon');var text=document.getElementById('toastText');t.classList.remove('hidden');t.style.borderLeftColor=type==='success'?'#059669':type==='info'?'#1e40af':'#dc2626';icon.textContent=type==='success'?'check_circle':type==='info'?'info':'error';icon.style.color=t.style.borderLeftColor;text.textContent=msg;setTimeout(function(){t.classList.add('hidden');},5000);}
+    async function deleteMonthData(month){if(!confirm('Yakin ingin menghapus semua data untuk bulan '+month+'?\n\nTindakan ini tidak dapat dibatalkan.'))return;try{var res=await fetch('/api/admin/delete-month?month='+month,{method:'DELETE'});var d=await res.json();if(d.success){showToast('Data bulan '+month+' berhasil dihapus','success');loadMonths();loadStats();loadRecap();}else{showToast(d.error||'Gagal menghapus data','error');}}catch(e){showToast('Terjadi kesalahan','error');}}
+
+    // Init deduct month on load
+    initDeductMonth();
+  </script>
+</body>
+</html>
