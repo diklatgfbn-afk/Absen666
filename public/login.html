@@ -413,7 +413,7 @@
         if (spinner) m.animate(spinner, { scale: [1, 1.2, 1] }, { duration: 1, repeat: Infinity, ease: 'easeInOut' });
 
         try {
-          const res = await fetch('/api/auth/login', {
+          const res = await fetch(window.API_BASE_URL + '/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
@@ -504,7 +504,7 @@
       document.getElementById('loadingOverlay').classList.remove('hidden');
 
       try {
-        const res = await fetch('/api/auth/login', {
+        const res = await fetch(window.API_BASE_URL + '/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
@@ -532,7 +532,7 @@
     document.getElementById('password').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('loginBtn').click(); });
 
     // Check session
-    fetch('/api/auth/session').then(r => r.json()).then(d => {
+    fetch(window.API_BASE_URL + '/api/auth/session').then(r => r.json()).then(d => {
       if (d.authenticated) window.location.href = d.user.role === 'admin' ? '/admin.html' : '/karyawan.html';
     }).catch(() => {});
 
